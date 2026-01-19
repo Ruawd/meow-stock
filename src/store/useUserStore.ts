@@ -19,6 +19,7 @@ interface UserState {
     isLoading: boolean;
     fetchUser: () => Promise<void>;
     logout: () => Promise<void>;
+    updateBalance: (newBalance: number) => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -44,4 +45,20 @@ export const useUserStore = create<UserState>((set) => ({
         set({ user: null });
         window.location.href = '/';
     },
+    updateBalance: (newBalance: number) => {
+        set((state) => {
+            if (state.user && state.user.credit) {
+                return {
+                    user: {
+                        ...state.user,
+                        credit: {
+                            ...state.user.credit,
+                            availableBalance: newBalance
+                        }
+                    }
+                };
+            }
+            return state;
+        });
+    }
 }));

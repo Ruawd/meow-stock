@@ -14,7 +14,7 @@ interface ExchangeModalProps {
 }
 
 export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: ExchangeModalProps) {
-    const { user, fetchUser } = useUserStore();
+    const { user, fetchUser, updateBalance } = useUserStore();
     const { balance, depositCapital, withdrawCapital } = useStockStore();
     const [action, setAction] = useState<'DEPOSIT' | 'WITHDRAW'>(initialTab);
     const [amount, setAmount] = useState<string>('');
@@ -52,7 +52,11 @@ export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: Excha
                 const res = await depositCapital(val);
                 if (res.success) {
                     toast.success(`充值成功：${val} Meow Coin 兑换 ${(val * EXCHANGE_RATE).toLocaleString()} 资金`);
-                    await fetchUser(); // Refresh Coin balance
+                    if (res.newMeowBalance !== undefined) {
+                        updateBalance(res.newMeowBalance);
+                    } else {
+                        await fetchUser();
+                    }
                     onClose();
                     setAmount('');
                 } else {
@@ -79,7 +83,11 @@ export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: Excha
                 const res = await withdrawCapital(val);
                 if (res.success) {
                     toast.success(`提现成功：${val.toLocaleString()} 资金 兑换 ${coinVal} Meow Coin`);
-                    await fetchUser(); // Refresh Coin balance
+                    if (res.newMeowBalance !== undefined) {
+                        updateBalance(res.newMeowBalance);
+                    } else {
+                        await fetchUser();
+                    }
                     onClose();
                     setAmount('');
                 } else {

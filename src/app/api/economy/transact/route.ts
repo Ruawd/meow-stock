@@ -80,7 +80,8 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 success: true,
-                capitalDelta: capitalDelta
+                capitalDelta: capitalDelta,
+                newMeowBalance: newBalance
             });
 
         } else if (type === 'WITHDRAW') {
@@ -109,7 +110,8 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 success: true,
-                capitalDelta: -capitalAmount
+                capitalDelta: -capitalAmount,
+                newMeowBalance: newBalance
             });
         }
 
