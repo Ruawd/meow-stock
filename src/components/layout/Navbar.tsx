@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { LayoutDashboard, PieChart, LineChart, Wallet } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { LineChart } from 'lucide-react';
+import { AuthNav } from './AuthNav';
 
 export function Navbar() {
     return (
@@ -32,10 +31,7 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Balance will be injected here via a client component or simplified */}
-                    <Button variant="outline" size="sm" className="hidden sm:flex border-red-500/20 hover:bg-red-500/10 hover:text-red-500">
-                        Connect Wallet
-                    </Button>
+                    <AuthNav />
                 </div>
             </div>
         </nav>
