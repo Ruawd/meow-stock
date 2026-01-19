@@ -34,10 +34,27 @@ export async function GET(request: Request) {
             credit: stats.credit
         };
         await session.save();
+        // Use the configured public URL origin if available, otherwise fallback to request origin
+        let baseUrl = new URL(request.url).origin;
+        try {
+            if (meow.config.redirectUri) {
+                baseUrl = new URL(meow.config.redirectUri).origin;
+            }
+        } catch (e) {
+            console.warn('Failed to parse redirectUri for base URL, using request origin');
+        }
 
-        return NextResponse.redirect(new URL('/', request.url));
-    } catch (error) {
-        console.error('Login error:', error);
-        return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+        return NextResponse.redirect(new URL('/', baseUrl));
+    } catch (error: any) {
+        console.error('Login error detail:', error);
+        console.error('Error message:', error.message);
+        if (error.response) {
+            console.error('Response data:', error.response.data);
+        }
+        return NextResponse.json({
+            error: 'Authentication failed',
+            message: error.message,
+            details: error.response?.data || 'No additional details'
+        }, { status: 500 });
     }
 }
