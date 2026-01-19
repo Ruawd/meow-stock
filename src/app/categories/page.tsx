@@ -1,145 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { TrendingUp, Search } from "lucide-react";
+import { TrendingUp, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Stock Categories Data
-const STOCK_CATEGORIES = {
-    technology: {
-        name: "科技股",
-        icon: "💻",
-        stocks: [
-            { code: "sz300750", name: "宁德时代" },
-            { code: "sz002594", name: "比亚迪" },
-            { code: "sh688981", name: "中芯国际" },
-            { code: "sz000063", name: "中兴通讯" },
-            { code: "sz002415", name: "海康威视" },
-            { code: "sh600570", name: "恒生电子" },
-            { code: "sz000725", name: "京东方A" },
-            { code: "sz300782", name: "卓胜微" },
-        ],
-    },
-    finance: {
-        name: "金融股",
-        icon: "🏦",
-        stocks: [
-            { code: "sh601318", name: "中国平安" },
-            { code: "sh600036", name: "招商银行" },
-            { code: "sz000001", name: "平安银行" },
-            { code: "sh600016", name: "民生银行" },
-            { code: "sh601398", name: "工商银行" },
-            { code: "sh601288", name: "农业银行" },
-            { code: "sh601939", name: "建设银行" },
-            { code: "sh600030", name: "中信证券" },
-        ],
-    },
-    consumer: {
-        name: "消费零售",
-        icon: "🛒",
-        stocks: [
-            { code: "sh600519", name: "贵州茅台" },
-            { code: "sz000858", name: "五粮液" },
-            { code: "sh603288", name: "海天味业" },
-            { code: "sz000333", name: "美的集团" },
-            { code: "sz000651", name: "格力电器" },
-            { code: "sh600887", name: "伊利股份" },
-            { code: "sz002352", name: "顺丰控股" },
-            { code: "sh601888", name: "中国中免" },
-        ],
-    },
-    healthcare: {
-        name: "医药健康",
-        icon: "💊",
-        stocks: [
-            { code: "sz300760", name: "迈瑞医疗" },
-            { code: "sh600276", name: "恒瑞医药" },
-            { code: "sz000661", name: "长春高新" },
-            { code: "sh603259", name: "药明康德" },
-            { code: "sz300347", name: "泰格医药" },
-            { code: "sz002821", name: "凯莱英" },
-            { code: "sz300015", name: "爱尔眼科" },
-            { code: "sz002230", name: "科大讯飞" },
-        ],
-    },
-    energy: {
-        name: "能源电力",
-        icon: "⚡",
-        stocks: [
-            { code: "sh600900", name: "长江电力" },
-            { code: "sh601012", name: "隆基绿能" },
-            { code: "sh688599", name: "天合光能" },
-            { code: "sh601088", name: "中国神华" },
-            { code: "sh600019", name: "宝钢股份" },
-            { code: "sh600028", name: "中国石化" },
-            { code: "sh601857", name: "中国石油" },
-            { code: "sh601225", name: "陕西煤业" },
-        ],
-    },
-    industrial: {
-        name: "工业制造",
-        icon: "🏭",
-        stocks: [
-            { code: "sh600031", name: "三一重工" },
-            { code: "sz000333", name: "美的集团" },
-            { code: "sh601766", name: "中国中车" },
-            { code: "sh600585", name: "海螺水泥" },
-            { code: "sh600703", name: "三安光电" },
-            { code: "sz002460", name: "赣锋锂业" },
-            { code: "sh688111", name: "金山办公" },
-            { code: "sz300059", name: "东方财富" },
-        ],
-    },
-    realestate: {
-        name: "房地产",
-        icon: "🏢",
-        stocks: [
-            { code: "sz000002", name: "万科A" },
-            { code: "sh600048", name: "保利发展" },
-            { code: "sz001979", name: "招商蛇口" },
-            { code: "sh600340", name: "华夏幸福" },
-            { code: "sz000069", name: "华侨城A" },
-            { code: "sh600606", name: "绿地控股" },
-            { code: "sh600383", name: "金地集团" },
-            { code: "sz000656", name: "金科股份" },
-        ],
-    },
-    telecom: {
-        name: "通信",
-        icon: "📡",
-        stocks: [
-            { code: "sh600050", name: "中国联通" },
-            { code: "sh600941", name: "中国移动" },
-            { code: "sh601728", name: "中国电信" },
-            { code: "sz000063", name: "中兴通讯" },
-            { code: "sh600198", name: "大唐电信" },
-            { code: "sh600485", name: "信威集团" },
-            { code: "sz002313", name: "日海智能" },
-            { code: "sz300628", name: "亿联网络" },
-        ],
-    },
-};
+interface Category {
+    id: string;
+    name: string;
+    icon: string;
+    count: number;
+    change: number;
+}
 
-type CategoryKey = keyof typeof STOCK_CATEGORIES;
+interface Stock {
+    code: string;
+    name: string;
+    price: number;
+    change: number;
+    changePercent: number;
+}
 
 export default function CategoriesPage() {
-    const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [stocks, setStocks] = useState<Stock[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [loadingStocks, setLoadingStocks] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
+    // Fetch categories on mount
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('/api/categories');
+            const data = await response.json();
+
+            if (data.success) {
+                setCategories(data.categories);
+            } else {
+                setError(data.error || '获取行业分类失败');
+            }
+        } catch (err: any) {
+            console.error('Error fetching categories:', err);
+            setError('网络错误，请重试');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch stocks when category is selected
+    useEffect(() => {
+        if (selectedCategory) {
+            fetchStocks(selectedCategory);
+        } else {
+            setStocks([]);
+        }
+    }, [selectedCategory]);
+
+    const fetchStocks = async (categoryId: string) => {
+        setLoadingStocks(true);
+        try {
+            const response = await fetch(`/api/category-stocks?id=${categoryId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                setStocks(data.stocks);
+            } else {
+                setStocks([]);
+            }
+        } catch (err: any) {
+            console.error('Error fetching stocks:', err);
+            setStocks([]);
+        } finally {
+            setLoadingStocks(false);
+        }
+    };
+
     const handleStockClick = (code: string) => {
-        // Navigate to home page with the stock loaded
         router.push(`/?stock=${code}`);
     };
 
-    // Filter stocks based on search query
     const getFilteredStocks = () => {
-        if (!selectedCategory) return [];
-
-        const stocks = STOCK_CATEGORIES[selectedCategory].stocks;
         if (!searchQuery) return stocks;
 
         return stocks.filter(stock =>
@@ -149,25 +100,70 @@ export default function CategoriesPage() {
     };
 
     const filteredStocks = getFilteredStocks();
+    const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="container mx-auto p-4 space-y-6 pb-20">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight mb-2">行业板块</h1>
+                    <p className="text-muted-foreground">按行业分类浏览A股上市公司</p>
+                </div>
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="ml-3 text-muted-foreground">正在加载行业分类...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="container mx-auto p-4 space-y-6 pb-20">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight mb-2">行业板块</h1>
+                    <p className="text-muted-foreground">按行业分类浏览A股上市公司</p>
+                </div>
+                <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-8 text-center">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-4 text-destructive" />
+                    <p className="text-lg font-medium mb-2">{error}</p>
+                    <Button onClick={fetchCategories} variant="outline" className="mt-4">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        重新加载
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-4 space-y-6 pb-20">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight mb-2">自选股票</h1>
-                <p className="text-muted-foreground">按行业分类浏览A股上市公司</p>
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight mb-2">行业板块</h1>
+                    <p className="text-muted-foreground">
+                        实时行业分类数据 · 共 {categories.length} 个板块
+                    </p>
+                </div>
+                <Button onClick={fetchCategories} variant="outline" size="sm">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    刷新
+                </Button>
             </div>
 
             {/* Category Chips */}
             <div className="flex flex-wrap gap-3">
-                {(Object.keys(STOCK_CATEGORIES) as CategoryKey[]).map((key) => {
-                    const category = STOCK_CATEGORIES[key];
-                    const isSelected = selectedCategory === key;
+                {categories.map((category) => {
+                    const isSelected = selectedCategory === category.id;
+                    const isUp = category.change >= 0;
 
                     return (
                         <button
-                            key={key}
-                            onClick={() => setSelectedCategory(key)}
+                            key={category.id}
+                            onClick={() => setSelectedCategory(category.id)}
                             className={cn(
                                 "px-4 py-2.5 rounded-lg border-2 transition-all font-medium text-sm flex items-center gap-2",
                                 isSelected
@@ -176,14 +172,24 @@ export default function CategoriesPage() {
                             )}
                         >
                             <span className="text-lg">{category.icon}</span>
-                            <span>{category.name}</span>
-                            <span className="text-xs opacity-70">({category.stocks.length})</span>
+                            <div className="text-left">
+                                <div className="flex items-center gap-2">
+                                    <span>{category.name}</span>
+                                    <span className="text-xs opacity-70">({category.count})</span>
+                                </div>
+                                <div className={cn(
+                                    "text-xs font-mono",
+                                    isUp ? "text-[color:var(--up)]" : "text-[color:var(--down)]"
+                                )}>
+                                    {isUp ? '+' : ''}{category.change.toFixed(2)}%
+                                </div>
+                            </div>
                         </button>
                     );
                 })}
             </div>
 
-            {/* Search Bar (only show when category is selected) */}
+            {/* Search Bar */}
             {selectedCategory && (
                 <div className="flex gap-2">
                     <div className="relative flex-1 max-w-md">
@@ -212,17 +218,23 @@ export default function CategoriesPage() {
                     <div className="flex items-center gap-2 mb-4">
                         <TrendingUp className="w-5 h-5 text-primary" />
                         <h2 className="text-xl font-semibold">
-                            {STOCK_CATEGORIES[selectedCategory].name}
+                            {selectedCategoryData?.name || '加载中...'}
                         </h2>
                         <span className="text-sm text-muted-foreground">
                             ({filteredStocks.length} 只股票)
                         </span>
                     </div>
 
-                    {filteredStocks.length > 0 ? (
+                    {loadingStocks ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                            <span className="ml-3 text-muted-foreground">正在加载股票数据...</span>
+                        </div>
+                    ) : filteredStocks.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                            {
-                                filteredStocks.map((stock) => (
+                            {filteredStocks.map((stock) => {
+                                const isUp = stock.changePercent >= 0;
+                                return (
                                     <button
                                         key={stock.code}
                                         onClick={() => handleStockClick(stock.code)}
@@ -234,9 +246,20 @@ export default function CategoriesPage() {
                                         <div className="text-sm text-muted-foreground mt-1 uppercase">
                                             {stock.code}
                                         </div>
+                                        <div className="flex items-center justify-between mt-2">
+                                            <span className="text-sm font-mono">
+                                                ¥{stock.price.toFixed(2)}
+                                            </span>
+                                            <span className={cn(
+                                                "text-xs font-mono font-semibold",
+                                                isUp ? "text-[color:var(--up)]" : "text-[color:var(--down)]"
+                                            )}>
+                                                {isUp ? '+' : ''}{stock.changePercent.toFixed(2)}%
+                                            </span>
+                                        </div>
                                     </button>
-                                ))
-                            }
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="text-center py-12 text-muted-foreground">
@@ -249,12 +272,11 @@ export default function CategoriesPage() {
                 <div className="bg-card/50 border border-dashed rounded-xl p-12 text-center">
                     <div className="text-muted-foreground">
                         <TrendingUp className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                        <p className="text-lg font-medium mb-2">选择一个行业分类</p>
-                        <p className="text-sm">点击上方的行业标签查看该类别的股票</p>
+                        <p className="text-lg font-medium mb-2">选择一个行业板块</p>
+                        <p className="text-sm">点击上方的板块标签查看该行业的股票</p>
                     </div>
                 </div>
-            )
-            }
-        </div >
+            )}
+        </div>
     );
 }
