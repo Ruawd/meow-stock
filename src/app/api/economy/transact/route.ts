@@ -2,6 +2,7 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { SessionData, sessionOptions } from '@/lib/session';
+import meow from '@/lib/meow';
 
 // Helper to call external Meow Portal/Credit Master API
 async function updateExternalCredit(username: string, amount: number, reason: string) {
@@ -63,6 +64,11 @@ export async function POST(request: Request) {
                 const apiRes = await updateExternalCredit(username, -amount, `Deposit to Stock Market`);
                 if (apiRes.data && apiRes.data.new_balance) {
                     newBalance = parseFloat(apiRes.data.new_balance);
+                } else {
+                    // Fallback: Fetch updated stats if API didn't return new balance
+                    // This matches the pattern in Lottery_Full_Source
+                    const stats = await meow.portal.getUserStats(username);
+                    newBalance = stats.credit?.availableBalance ?? null;
                 }
             } catch (error: any) {
                 console.error("Failed to deduct Meow Coin:", error);
@@ -96,6 +102,10 @@ export async function POST(request: Request) {
                 const apiRes = await updateExternalCredit(username, coinAmount, `Withdraw from Stock Market`);
                 if (apiRes.data && apiRes.data.new_balance) {
                     newBalance = parseFloat(apiRes.data.new_balance);
+                } else {
+                    // Fallback: Fetch updated stats if API didn't return new balance
+                    const stats = await meow.portal.getUserStats(username);
+                    newBalance = stats.credit?.availableBalance ?? null;
                 }
             } catch (error: any) {
                 console.error("Failed to add Meow Coin:", error);
