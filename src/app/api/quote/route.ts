@@ -93,9 +93,17 @@ export async function GET(request: Request) {
                     if (matches) {
                         const symbol = matches[1];
                         const content = matches[2];
+
+                        // Validate: Empty content means invalid stock code
+                        if (!content || content.trim() === '') {
+                            // Invalid stock code, skip
+                            return;
+                        }
+
                         const parts = content.split(',');
 
-                        if (parts.length > 30) {
+                        // Validate: Must have sufficient data and a valid stock name
+                        if (parts.length > 30 && parts[0] && parts[0].trim() !== '') {
                             const price = parseFloat(parts[3]);
                             const prevClose = parseFloat(parts[2]);
                             const change = price - prevClose;
@@ -117,6 +125,7 @@ export async function GET(request: Request) {
                                 time: parts[31],
                             };
                         }
+                        // If validation fails, stock data is not added to response
                     }
                 });
             }

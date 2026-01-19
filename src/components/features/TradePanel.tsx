@@ -114,12 +114,27 @@ export function TradePanel({ symbol }: TradePanelProps) {
 
     return (
         <div className="rounded-xl border bg-card p-6 shadow-sm min-h-[400px]">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">交易</h2>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Wallet className="w-4 h-4" />
-                    <span>¥{balance.toLocaleString()}</span>
+            <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-xl font-semibold">交易</h2>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Wallet className="w-4 h-4" />
+                        <span>¥{balance.toLocaleString()}</span>
+                    </div>
                 </div>
+                {stock && (
+                    <div className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{stock.name}</span>
+                        <span className="mx-1.5">·</span>
+                        <span className="uppercase">{symbol}</span>
+                    </div>
+                )}
+                {!loading && !stock && (
+                    <div className="text-sm text-destructive flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>股票数据无效</span>
+                    </div>
+                )}
             </div>
 
             {/* Buy/Sell Toggle */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MarketOverview } from "@/components/features/MarketOverview";
 import { StockChart } from "@/components/features/StockChart";
 import { TradePanel } from "@/components/features/TradePanel";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useOrderMonitor } from "@/hooks/useOrderMonitor";
 import { useStockStore } from "@/store/useStockStore";
+import { useStockData } from "@/hooks/useStockData";
 
 const POPULAR_STOCKS = [
   { code: 'sh600519', name: '贵州茅台' },
@@ -31,8 +32,25 @@ export default function Home() {
   const [searchInput, setSearchInput] = useState("");
   const { addFavorite, removeFavorite, isFavorite } = useStockStore();
 
+  // Fetch current stock data to show company name
+  const { data: stockData } = useStockData([symbol], 3000);
+  const currentStock = stockData[symbol];
+
   // Enable automatic limit order execution
   useOrderMonitor();
+
+  // Check for stock parameter in URL (from categories page)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const stockParam = params.get('stock');
+      if (stockParam) {
+        setSymbol(stockParam.toLowerCase());
+        // Clean up URL
+        window.history.replaceState({}, '', '/');
+      }
+    }
+  }, []);
 
   const isFav = isFavorite(symbol);
 
@@ -58,7 +76,7 @@ export default function Home() {
       }
       setSymbol(code);
       setSearchInput(""); // Clear input on search
-      toast.success(`Loaded Stock: ${code.toUpperCase()}`);
+      toast.success(`已加载股票: ${code.toUpperCase()}`);
     }
   };
 
@@ -117,7 +135,12 @@ export default function Home() {
             <div className="flex items-center justify-between gap-2 mb-4">
               <div className="flex items-center gap-2">
                 <div className="h-6 w-1 bg-primary rounded-full" />
-                <h2 className="text-lg font-semibold uppercase">{symbol} 走势图</h2>
+                <div>
+                  <h2 className="text-lg font-semibold uppercase">{symbol}</h2>
+                  {currentStock && (
+                    <p className="text-sm text-muted-foreground">{currentStock.name}</p>
+                  )}
+                </div>
               </div>
               <button
                 onClick={toggleFavorite}

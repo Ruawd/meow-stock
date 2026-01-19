@@ -25,6 +25,9 @@ export function Navbar() {
                     <Link href="/market" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
                         市场
                     </Link>
+                    <Link href="/categories" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+                        自选股票
+                    </Link>
                     <Link href="/leaderboard" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
                         排行榜
                     </Link>
