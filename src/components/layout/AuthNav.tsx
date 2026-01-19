@@ -41,7 +41,7 @@ export function AuthNav() {
                 <div className="flex flex-col items-end border-r border-white/10 pr-4">
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Meow Coin</span>
                     <span className="text-sm font-bold text-amber-500 font-mono">
-                        {user.credit?.availableBalance?.toLocaleString() ?? 0}
+                        {Number(user.credit?.availableBalance ?? 0).toLocaleString()}
                     </span>
                 </div>
 
