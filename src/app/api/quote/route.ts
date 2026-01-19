@@ -78,8 +78,8 @@ export async function GET(request: Request) {
 
     if (realCodes) {
         try {
-            const response = await fetch(`http://hq.sinajs.cn/list=${realCodes}`, {
-                headers: { 'Referer': 'https://finance.sina.com.cn' },
+            // Use Tencent API (Free & Realtime)
+            const response = await fetch(`http://qt.gtimg.cn/q=${realCodes}`, {
                 cache: 'no-store',
             });
 
@@ -89,43 +89,59 @@ export async function GET(request: Request) {
                 const lines = text.split('\n');
 
                 lines.forEach(line => {
-                    const matches = line.match(/var hq_str_(\w+)="([^"]+)";/);
+                    // v_sz000001="51~Name~Code~Price~PrevClose~Open~Vol~..."
+                    const matches = line.match(/v_(\w+)="([^"]+)";/);
                     if (matches) {
-                        const symbol = matches[1];
+                        const symbol = matches[1]; // sz000001
                         const content = matches[2];
 
-                        // Validate: Empty content means invalid stock code
-                        if (!content || content.trim() === '') {
-                            // Invalid stock code, skip
-                            return;
-                        }
+                        if (!content || content.trim() === '') return;
 
-                        const parts = content.split(',');
+                        const parts = content.split('~');
 
-                        // Validate: Must have sufficient data and a valid stock name
-                        if (parts.length > 30 && parts[0] && parts[0].trim() !== '') {
+                        // Tencent Field Mapping:
+                        // 1: Name
+                        // 2: Code
+                        // 3: Current Price
+                        // 4: Prev Close
+                        // 5: Open
+                        // 6: Volume (Lots / Hand) -> * 100 for Shares
+                        // 33: High
+                        // 34: Low
+                        // 37: Amount (Wan / 10k) -> * 10000 for standard unit
+                        // 30: Timestamp (YYYYMMDDHHMMSS)
+
+                        if (parts.length > 30) {
                             const price = parseFloat(parts[3]);
-                            const prevClose = parseFloat(parts[2]);
+                            const prevClose = parseFloat(parts[4]);
                             const change = price - prevClose;
                             const changePercent = prevClose === 0 ? 0 : (change / prevClose) * 100;
 
+                            // Parse Date/Time
+                            const rawTime = parts[30]; // 20230101120000
+                            let dateStr = '';
+                            let timeStr = '';
+                            if (rawTime && rawTime.length === 14) {
+                                dateStr = `${rawTime.substring(0, 4)}-${rawTime.substring(4, 6)}-${rawTime.substring(6, 8)}`;
+                                timeStr = `${rawTime.substring(8, 10)}:${rawTime.substring(10, 12)}:${rawTime.substring(12, 14)}`;
+                            }
+
                             data[symbol] = {
                                 symbol: symbol,
-                                name: parts[0],
-                                open: parseFloat(parts[1]),
+                                name: parts[1],
+                                open: parseFloat(parts[5]),
                                 prevClose: prevClose,
                                 price: price,
-                                high: parseFloat(parts[4]),
-                                low: parseFloat(parts[5]),
-                                volume: parseInt(parts[8]),
-                                amount: parseFloat(parts[9]),
+                                high: parseFloat(parts[33]),
+                                low: parseFloat(parts[34]),
+                                volume: parseFloat(parts[6]) * 100, // Lots to Shares
+                                amount: parseFloat(parts[37]) * 10000, // Wan to Unit
                                 change: parseFloat(change.toFixed(2)),
                                 changePercent: parseFloat(changePercent.toFixed(2)),
-                                date: parts[30],
-                                time: parts[31],
+                                date: dateStr,
+                                time: timeStr,
                             };
                         }
-                        // If validation fails, stock data is not added to response
                     }
                 });
             }

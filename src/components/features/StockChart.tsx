@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo, useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { LineChart, BarChart3, RefreshCcw } from 'lucide-react';
+
 
 interface StockChartProps {
     symbol: string;
@@ -26,11 +29,36 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
         return code; // Fallback
     };
 
+    const [viewMode, setViewMode] = useState<'tradingview' | 'realtime'>('tradingview');
+    const [chartType, setChartType] = useState<'min' | 'daily' | 'weekly' | 'monthly'>('min');
+    const [timestamp, setTimestamp] = useState(Date.now());
+
+    // Auto refresh real-time chart (only for minute chart ideally, but fine for all)
     useEffect(() => {
-        if (!containerRef.current) return;
+        if (viewMode === 'realtime') {
+            const timer = setInterval(() => {
+                setTimestamp(Date.now());
+            }, 30000); // Refresh every 30s
+            return () => clearInterval(timer);
+        }
+    }, [viewMode]);
+
+    useEffect(() => {
+        if (!containerRef.current || viewMode !== 'tradingview') return;
 
         // Clear previous widget
         containerRef.current.innerHTML = '';
+        const widgetContainer = document.createElement('div');
+        widgetContainer.className = "tradingview-widget-container";
+        widgetContainer.style.height = "100%";
+        widgetContainer.style.width = "100%";
+        containerRef.current.appendChild(widgetContainer);
+
+        const widget = document.createElement('div');
+        widget.className = "tradingview-widget-container__widget";
+        widget.style.height = "calc(100% - 32px)";
+        widget.style.width = "100%";
+        widgetContainer.appendChild(widget);
 
         const tvSymbol = getTradingViewSymbol(symbol);
 
@@ -64,21 +92,74 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
             "gridColor": "rgba(42, 46, 57, 0.06)",
         });
 
-        containerRef.current.appendChild(script);
+        widgetContainer.appendChild(script);
 
-    }, [symbol]);
+    }, [symbol, viewMode]);
 
     return (
         <div className="w-full h-[500px] bg-card rounded-xl border overflow-hidden relative" ref={containerRef}>
-            {/* Widget Container - strictly handled by TradingView script */}
-            <div className="tradingview-widget-container" style={{ height: "100%", width: "100%" }}>
-                <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
-                <div className="tradingview-widget-copyright">
-                    <a href="https://cn.tradingview.com/" rel="noopener nofollow" target="_blank">
-                        <span className="blue-text">Track all markets on TradingView</span>
-                    </a>
-                </div>
+            <div className="absolute top-2 right-2 z-10 flex gap-2">
+                <Button
+                    variant={viewMode === 'tradingview' ? "default" : "secondary"}
+                    size="sm"
+                    onClick={() => setViewMode('tradingview')}
+                    className="h-8 gap-2"
+                >
+                    <BarChart3 className="w-4 h-4" />
+                    专业图表
+                </Button>
+                <Button
+                    variant={viewMode === 'realtime' ? "default" : "secondary"}
+                    size="sm"
+                    onClick={() => setViewMode('realtime')}
+                    className="h-8 gap-2"
+                >
+                    <LineChart className="w-4 h-4" />
+                    实时走势
+                </Button>
             </div>
+
+            {viewMode === 'tradingview' ? (
+                /* Widget Container - strictly handled by TradingView script */
+                <div className="tradingview-widget-container" style={{ height: "100%", width: "100%" }}>
+                    {/* Content injected by useEffect */}
+                </div>
+            ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-black relative">
+                    {/* Period Selector */}
+                    <div className="absolute top-2 left-2 z-10 flex bg-secondary/50 rounded-lg p-1 gap-1">
+                        {(['min', 'daily', 'weekly', 'monthly'] as const).map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setChartType(type)}
+                                className={`px-3 py-1 text-xs rounded-md transition-colors ${chartType === type
+                                        ? 'bg-primary text-primary-foreground font-medium'
+                                        : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                                    }`}
+                            >
+                                {type === 'min' && '分时'}
+                                {type === 'daily' && '日K'}
+                                {type === 'weekly' && '周K'}
+                                {type === 'monthly' && '月K'}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="relative w-full h-full flex items-center justify-center pt-8">
+                        <img
+                            src={`https://image.sinajs.cn/newchart/${chartType}/n/${symbol.toLowerCase()}.gif?t=${timestamp}`}
+                            alt={`${symbol} ${chartType} Chart`}
+                            className="max-w-full max-h-full object-contain filter invert hue-rotate-180 brightness-90 contrast-125"
+                        />
+                        {/* Note: Sina images are white bg by default. CSS filter helps it blend into dark mode, 
+                             though not perfect. But it's free real-time. */}
+                    </div>
+                    <div className="absolute bottom-2 right-2 text-xs text-muted-foreground flex items-center gap-1">
+                        <RefreshCcw className="w-3 h-3 animate-spin duration-[3000ms]" />
+                        每30秒自动刷新
+                    </div>
+                </div>
+            )}
         </div>
     );
 });
