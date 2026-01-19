@@ -1,8 +1,9 @@
 "use client";
 
 import { useStockStore } from "@/store/useStockStore";
-import { Trophy, TrendingDown, DollarSign } from "lucide-react";
+import { Trophy, TrendingDown, DollarSign, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserRankings } from "@/components/features/UserRankings";
 
 export default function LeaderboardPage() {
     const { transactions } = useStockStore();
@@ -131,20 +132,35 @@ export default function LeaderboardPage() {
                 </div>
             </div>
 
-            {/* Rankings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <RankingCard
-                    title="财富榜 🏆"
-                    stocks={wealthRanking}
-                    type="profit"
-                    icon={Trophy}
-                />
-                <RankingCard
-                    title="破烂榜 💔"
-                    stocks={lossRanking}
-                    type="loss"
-                    icon={TrendingDown}
-                />
+            {/* Global User Rankings */}
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight mb-4 flex items-center gap-2">
+                    <Users className="w-6 h-6" />
+                    全服排行榜
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <UserRankings type="profit" title="全服财富榜 (盈利)" />
+                    <UserRankings type="loss" title="全服破烂榜 (亏损)" />
+                </div>
+            </div>
+
+            {/* Personal Performance */}
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight mb-4">我的交易表现</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <RankingCard
+                        title="财富榜 (个股盈利)"
+                        stocks={wealthRanking}
+                        type="profit"
+                        icon={Trophy}
+                    />
+                    <RankingCard
+                        title="破烂榜 (个股亏损)"
+                        stocks={lossRanking}
+                        type="loss"
+                        icon={TrendingDown}
+                    />
+                </div>
             </div>
         </div>
     );
