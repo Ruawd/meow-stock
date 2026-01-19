@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 import { useStockStore } from '@/store/useStockStore';
 import { Button } from '@/components/ui/button';
@@ -10,14 +10,22 @@ import { toast } from 'sonner';
 interface ExchangeModalProps {
     isOpen: boolean;
     onClose: () => void;
+    initialTab?: 'DEPOSIT' | 'WITHDRAW';
 }
 
-export function ExchangeModal({ isOpen, onClose }: ExchangeModalProps) {
+export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: ExchangeModalProps) {
     const { user, fetchUser } = useUserStore();
     const { balance, depositCapital, withdrawCapital } = useStockStore();
-    const [action, setAction] = useState<'DEPOSIT' | 'WITHDRAW'>('DEPOSIT');
+    const [action, setAction] = useState<'DEPOSIT' | 'WITHDRAW'>(initialTab);
     const [amount, setAmount] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Update action when modal opens or initialTab changes
+    useEffect(() => {
+        if (isOpen) {
+            setAction(initialTab);
+        }
+    }, [isOpen, initialTab]);
 
     if (!isOpen) return null;
 
