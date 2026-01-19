@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         const data = await response.json();
 
         // Parse Logic
-        let result = [];
+        let result: any[] = [];
         const stockData = data.data?.[code];
 
         if (!stockData) {
