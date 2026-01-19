@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         if (type === 'min') {
             // Use mkline for 1-minute K-line data
             // http://ifzq.gtimg.cn/appstock/app/kline/mkline?param=sh600519,m1,,640
-            url = `https://web.ifzq.gtimg.cn/appstock/app/kline/mkline?param=${code},m1,,320`;
+            url = `http://ifzq.gtimg.cn/appstock/app/kline/mkline?param=${code},m1,,320`;
         } else {
             const periodMap: Record<string, string> = {
                 'daily': 'day',
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
                 'monthly': 'month'
             };
             const period = periodMap[type] || 'day';
-            url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${code},${period},,,320,qfq`;
+            url = `http://ifzq.gtimg.cn/appstock/app/fqkline/get?param=${code},${period},,,320,qfq`;
         }
 
         const response = await fetch(url, {
