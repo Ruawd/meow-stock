@@ -41,13 +41,13 @@ export function MarketOverview() {
                                 <h3 className="text-sm font-medium text-muted-foreground">{stock.name}</h3>
                                 <div className="mt-2 flex items-baseline gap-2">
                                     <span className={cn("text-2xl font-bold tracking-tight", isUp ? "text-[color:var(--up)]" : "text-[color:var(--down)]")}>
-                                        {stock.price.toFixed(2)}
+                                        {(stock.price || 0).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
                             <div className={cn("flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium", isUp ? "bg-[color:var(--up)]/10 text-[color:var(--up)]" : "bg-[color:var(--down)]/10 text-[color:var(--down)]")}>
                                 {isUp ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                                <span>{stock.changePercent.toFixed(2)}%</span>
+                                <span>{(stock.changePercent || 0).toFixed(2)}%</span>
                             </div>
                         </div>
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />

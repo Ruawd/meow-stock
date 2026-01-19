@@ -100,14 +100,14 @@ export function TradePanel({ symbol }: TradePanelProps) {
                 toast.error("资金不足");
                 return;
             }
-            buyStock(symbol, stock!.name || symbol, price, qty);
+            buyStock(symbol, stock?.name || symbol, price, qty);
             toast.success(`已买入 ${qty} 股`, { description: `@ ¥${price.toFixed(2)}` });
         } else {
             if (ownedQty < qty) {
                 toast.error("持股不足");
                 return;
             }
-            sellStock(symbol, stock!.name || symbol, price, qty);
+            sellStock(symbol, stock?.name || symbol, price, qty);
             toast.success(`已卖出 ${qty} 股`, { description: `@ ¥${price.toFixed(2)}` });
         }
     };

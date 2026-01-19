@@ -50,13 +50,23 @@ export async function GET(request: Request) {
                 code = 'bj' + rawCode;
             }
 
+            const parseNumber = (val: any) => {
+                if (typeof val === 'number') return val;
+                if (typeof val === 'string') {
+                    if (val === '-') return 0;
+                    const parsed = parseFloat(val);
+                    return isNaN(parsed) ? 0 : parsed;
+                }
+                return 0;
+            };
+
             return {
                 code: code.toLowerCase(),
-                name: item.f14,
-                price: item.f2 || 0,
-                change: item.f4 || 0,
-                changePercent: item.f3 || 0,
-                volume: item.f5 || 0
+                name: item.f14 || 'Unknown',
+                price: parseNumber(item.f2),
+                change: parseNumber(item.f4),
+                changePercent: parseNumber(item.f3),
+                volume: parseNumber(item.f5)
             };
         });
 
