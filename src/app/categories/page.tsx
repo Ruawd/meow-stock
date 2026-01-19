@@ -248,13 +248,13 @@ export default function CategoriesPage() {
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
                                             <span className="text-sm font-mono">
-                                                ¥{stock.price.toFixed(2)}
+                                                ¥{(stock.price || 0).toFixed(2)}
                                             </span>
                                             <span className={cn(
                                                 "text-xs font-mono font-semibold",
                                                 isUp ? "text-[color:var(--up)]" : "text-[color:var(--down)]"
                                             )}>
-                                                {isUp ? '+' : ''}{stock.changePercent.toFixed(2)}%
+                                                {isUp ? '+' : ''}{(stock.changePercent || 0).toFixed(2)}%
                                             </span>
                                         </div>
                                     </button>

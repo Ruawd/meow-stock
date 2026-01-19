@@ -83,6 +83,7 @@ export function StockChart({ symbol }: StockChartProps) {
             try {
                 let timestamp;
 
+                // Construct timestamp
                 if (symbol.toLowerCase().includes('test888')) {
                     const dateTimeStr = `${stock.date} ${stock.time}`;
                     timestamp = new Date(dateTimeStr).getTime() / 1000;
@@ -91,24 +92,20 @@ export function StockChart({ symbol }: StockChartProps) {
                     timestamp = new Date(dateTimeStr).getTime() / 1000;
                 }
 
-                // Construct proper K-line candle
-                // The open should be the previous candle's close (for continuity)
-                // But for real-time updates, we use the stock's actual open price from API
                 const currentCandle = {
-                    time: timestamp as any,
+                    time: timestamp,
                     open: stock.open,
                     high: stock.high,
                     low: stock.low,
                     close: stock.price,
                 };
-
                 candlestickSeriesRef.current.update(currentCandle);
 
                 // Update volume if we have volume series
                 if (volumeSeriesRef.current && stock.volume) {
                     const volumeColor = stock.price >= stock.open ? '#ef4444' : '#10b981';
                     volumeSeriesRef.current.update({
-                        time: timestamp as any,
+                        time: timestamp,
                         value: stock.volume,
                         color: volumeColor,
                     });
