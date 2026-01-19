@@ -11,7 +11,7 @@ export class PortalHelper {
 
     async getUserStats(username: string) {
         try {
-            const response = await axios.get(`${this.portalUrl}/users/${username}`, {
+            const response = await axios.get(`${this.portalUrl}/api/external/users/${username}`, {
                 headers: { 'X-API-Key': this.apiKey }
             });
             // Adapt to the expected format
@@ -34,7 +34,7 @@ export class PortalHelper {
 
     async deductCredit(username: string, amount: number, reason: string) {
         try {
-            const url = `${this.portalUrl}/users/${username}/credit`;
+            const url = `${this.portalUrl}/api/external/users/${username}/credit`;
             const payload = {
                 balanceChange: -Math.abs(amount),
                 reason: reason
@@ -51,7 +51,7 @@ export class PortalHelper {
 
     async awardCredit(username: string, amount: number, reason: string) {
         try {
-            const url = `${this.portalUrl}/users/${username}/credit`;
+            const url = `${this.portalUrl}/api/external/users/${username}/credit`;
             const payload = {
                 balanceChange: Math.abs(amount),
                 reason: reason
