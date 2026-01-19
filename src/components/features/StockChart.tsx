@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { LineChart, BarChart3, RefreshCcw } from 'lucide-react';
 
 
+import RealTimeChart from './RealTimeChart';
+
 interface StockChartProps {
     symbol: string;
 }
@@ -31,17 +33,6 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
 
     const [viewMode, setViewMode] = useState<'tradingview' | 'realtime'>('tradingview');
     const [chartType, setChartType] = useState<'min' | 'daily' | 'weekly' | 'monthly'>('min');
-    const [timestamp, setTimestamp] = useState(Date.now());
-
-    // Auto refresh real-time chart (only for minute chart ideally, but fine for all)
-    useEffect(() => {
-        if (viewMode === 'realtime') {
-            const timer = setInterval(() => {
-                setTimestamp(Date.now());
-            }, 30000); // Refresh every 30s
-            return () => clearInterval(timer);
-        }
-    }, [viewMode]);
 
     useEffect(() => {
         if (!containerRef.current || viewMode !== 'tradingview') return;
@@ -123,7 +114,7 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
                 /* Widget Container - strictly handled by TradingView script */
                 <div ref={containerRef} className="w-full h-full" />
             ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-black relative">
+                <div className="w-full h-full flex flex-col relative bg-black pt-10">
                     {/* Period Selector */}
                     <div className="absolute top-2 left-2 z-10 flex bg-secondary/50 rounded-lg p-1 gap-1">
                         {(['min', 'daily', 'weekly', 'monthly'] as const).map((type) => (
@@ -143,18 +134,8 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
                         ))}
                     </div>
 
-                    <div className="relative w-full h-full flex items-center justify-center pt-8">
-                        <img
-                            src={`https://image.sinajs.cn/newchart/${chartType}/n/${symbol.toLowerCase()}.gif?t=${timestamp}`}
-                            alt={`${symbol} ${chartType} Chart`}
-                            className="max-w-full max-h-full object-contain filter invert hue-rotate-180 brightness-90 contrast-125"
-                        />
-                        {/* Note: Sina images are white bg by default. CSS filter helps it blend into dark mode,
-                             though not perfect. But it's free real-time. */}
-                    </div>
-                    <div className="absolute bottom-2 right-2 text-xs text-muted-foreground flex items-center gap-1">
-                        <RefreshCcw className="w-3 h-3 animate-spin duration-[3000ms]" />
-                        每30秒自动刷新
+                    <div className="flex-1 w-full h-full overflow-hidden">
+                        <RealTimeChart symbol={symbol} type={chartType} />
                     </div>
                 </div>
             )}
