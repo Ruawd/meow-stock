@@ -20,9 +20,19 @@ export async function GET(request: Request) {
         // 2. Fetch extra stats from Portal
         const stats = await meow.portal.getUserStats(user.name);
 
-        // 3. Save to session
+        // 3. Save to session (Filtered to avoid cookie size limits)
         const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-        session.user = { ...user, ...stats };
+
+        session.user = {
+            name: user.name,
+            displayName: user.displayName,
+            email: user.email,
+            avatar: user.avatar,
+            id: user.id,
+            // Add portal stats
+            trustLevel: stats.trustLevel,
+            credit: stats.credit
+        };
         await session.save();
 
         return NextResponse.redirect(new URL('/', request.url));
