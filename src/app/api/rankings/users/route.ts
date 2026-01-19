@@ -15,7 +15,7 @@ if (!fs.existsSync(path.dirname(DATA_FILE))) {
 interface UserRankItem {
     name: string;
     avatar: string;
-    totalAssets: number;
+    totalProfit: number;
     updatedAt: number;
 }
 
@@ -40,11 +40,11 @@ function saveLeaderboard(data: UserRankItem[]) {
 }
 
 export async function GET() {
-    // Return top 20 users
+    // Return all (limit client side or separate processing)
+    // Actually better to return full list or top winners/losers structure
+    // For simplicity, return the raw list, client sorts
     const list = getLeaderboard();
-    // Sort just in case
-    list.sort((a, b) => b.totalAssets - a.totalAssets);
-    return NextResponse.json(list.slice(0, 20));
+    return NextResponse.json(list);
 }
 
 export async function POST(request: Request) {
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { totalAssets } = await request.json();
-        if (typeof totalAssets !== 'number') {
+        const { totalProfit } = await request.json();
+        if (typeof totalProfit !== 'number') {
             return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
         }
 
@@ -69,18 +69,11 @@ export async function POST(request: Request) {
         list.push({
             name: user.displayName || user.name,
             avatar: user.avatar,
-            totalAssets,
+            totalProfit, // Sync profit/loss amount
             updatedAt: Date.now()
         });
 
-        // Sort desc
-        list.sort((a, b) => b.totalAssets - a.totalAssets);
-
-        // Keep top 100 on disk
-        if (list.length > 100) {
-            list = list.slice(0, 100);
-        }
-
+        // Save raw list (sorting happens on read or client)
         saveLeaderboard(list);
 
         return NextResponse.json({ success: true });

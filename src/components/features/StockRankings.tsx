@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserRankings } from "./UserRankings";
 
 interface RankingStock {
     code: string;
@@ -120,9 +121,10 @@ export function StockRankings() {
     );
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <RankingCard title="涨幅榜" stocks={gainers} type="gainer" />
             <RankingCard title="跌幅榜" stocks={losers} type="loser" />
+            <UserRankings />
         </div>
     );
 }
