@@ -9,7 +9,12 @@
 
 ## 2. 环境变量配置
 
-在项目根目录下创建 `.env.local` (开发) 或 `.env.production` (生产) 文件。
+在项目根目录下创建 `.env` 文件（或者 `.env.local` / `.env.production`）。Next.js 会自动加载 `.env` 文件中的配置。
+
+你可以直接复制示例文件：
+```bash
+cp .env.example .env
+```
 
 ```env
 # --- Casdoor 配置 ---
@@ -89,3 +94,41 @@ pm2 start npm --name "meowstock" -- start
 - **Redirect URI Mismatch**: 确保 `.env` 中的 `CASDOOR_REDIRECT_URI` 与 Casdoor 后台应用配置的 `Redirect URLs` 完全一致。
 - **Login Failed**: 检查 `CASDOOR_CLIENT_ID` 和 `CASDOOR_CLIENT_SECRET` 是否正确。
 - **Meow Coin 不显示**: 检查 `PORTAL_URL` 是否可达，以及该用户在 Portal 中是否存在积分数据。
+
+## 7. 宝塔面板 (Baota) 部署指南
+
+### A. 安装 Node.js 环境
+1. 进入宝塔面板 -> **软件商店**。
+2. 搜索并安装 **Node.js 版本管理器**。
+3. 打开 Node.js 版本管理器，安装 **v18.17.0** 或更高版本的 Stable 版 (推荐 v20)。
+4. 确保在“命令行版本”中选择刚刚安装的版本。
+
+### B. 上传代码
+1. 将项目打包（排除 `node_modules` 和 `.next`）。
+2. 在宝塔面板 -> **文件** 中，上传并解压到网站目录（例如 `/www/wwwroot/meowstock`）。
+3. **重要**：上传你本地配置好的 `.env` 文件，或者在宝塔文件管理器中创建一个，并填入环境变量。
+
+### C. 添加 Node 项目
+1. 进入宝塔面板 -> **网站** -> **Node项目** -> **添加Node项目**。
+2. **项目目录**: 选择 `/www/wwwroot/meowstock`。
+3. **启动选项**: `npm run start`。
+4. **项目名称**: `meowstock`。
+5. **端口**: `3000` (如果被占用请更换，并在 `.env` 或 `package.json` 中适配)。
+6. **运行用户**: `www` (推荐)。
+7. **Node版本**: 选择之前安装的 v18+。
+8. 点击 **提交**。
+
+### D. 安装依赖与构建
+_如果你的压缩包没有包含 `node_modules` 和构建产物（推荐方式）：_
+
+1. 在 Node 项目列表中，点击刚刚创建的项目 -> **模块管理** -> **一键安装依赖** (或者点击“终端”手动运行 `npm install`)。
+2. 依赖安装完成后，点击 **脚本管理** (或在终端中) 运行构建命令：
+   - 脚本名称: `build`
+   - 命令: `npm run build`
+3. 构建完成后，如果项目没有自动启动，请点击 **重启** 或 **启动**。
+
+### E. 绑定域名 (可选)
+1. 在 Node 项目设置中 -> **域名管理**。
+2. 添加你的域名 (例如 `stock.ruawd.de`)。
+3. 宝塔会自动配置反向代理指向 3000 端口。
+4. 建议在 **SSL** 选项卡中申请并开启 Let's Encrypt 免费证书。

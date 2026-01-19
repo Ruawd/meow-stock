@@ -10,7 +10,7 @@ export interface Holding {
 
 export interface Transaction {
     id: string;
-    type: 'BUY' | 'SELL';
+    type: 'BUY' | 'SELL' | 'DEPOSIT' | 'WITHDRAW';
     symbol: string;
     name: string;
     price: number;
@@ -48,6 +48,10 @@ interface StockState {
     removeFavorite: (symbol: string) => void;
     isFavorite: (symbol: string) => boolean;
     resetAccount: () => void;
+
+    // Economy
+    depositCapital: (amount: number) => Promise<{ success: boolean; message?: string }>;
+    withdrawCapital: (amount: number) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useStockStore = create<StockState>()(
@@ -240,6 +244,80 @@ export const useStockStore = create<StockState>()(
                     transactions: [],
                     pendingOrders: [],
                 });
+            },
+
+            depositCapital: async (amount: number) => {
+                try {
+                    const res = await fetch('/api/economy/transact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'DEPOSIT', amount }),
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        const { balance, transactions } = get();
+                        set({
+                            balance: balance + data.capitalDelta,
+                            transactions: [
+                                {
+                                    id: crypto.randomUUID(),
+                                    type: 'DEPOSIT' as any, // Cast to any to bypass strict type for now or add to type def
+                                    symbol: 'CNY',
+                                    name: 'Deposit',
+                                    price: 1,
+                                    quantity: data.capitalDelta,
+                                    date: new Date().toISOString(),
+                                },
+                                ...transactions
+                            ]
+                        });
+                        return { success: true };
+                    } else {
+                        return { success: false, message: data.error };
+                    }
+                } catch (e: any) {
+                    return { success: false, message: e.message };
+                }
+            },
+
+            withdrawCapital: async (amount: number) => {
+                const { balance, transactions } = get();
+                if (balance < amount) {
+                    return { success: false, message: 'Insufficient capital' };
+                }
+
+                try {
+                    const res = await fetch('/api/economy/transact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'WITHDRAW', amount }),
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        set({
+                            balance: balance + data.capitalDelta, // delta is negative
+                            transactions: [
+                                {
+                                    id: crypto.randomUUID(),
+                                    type: 'WITHDRAW' as any,
+                                    symbol: 'CNY',
+                                    name: 'Withdraw',
+                                    price: 1,
+                                    quantity: Math.abs(data.capitalDelta),
+                                    date: new Date().toISOString(),
+                                },
+                                ...transactions
+                            ]
+                        });
+                        return { success: true };
+                    } else {
+                        return { success: false, message: data.error };
+                    }
+                } catch (e: any) {
+                    return { success: false, message: e.message };
+                }
             },
         }),
         {

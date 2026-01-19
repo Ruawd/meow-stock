@@ -11,14 +11,58 @@ export class PortalHelper {
 
     async getUserStats(username: string) {
         try {
-            const url = `${this.portalUrl}/api/external/users/${encodeURIComponent(username)}`;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const headers: any = this.apiKey ? { 'X-Api-Key': this.apiKey } : {};
-            const res = await axios.get(url, { headers });
-            return res.data;
-        } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-            console.error('[MeowSDK] Failed to fetch portal stats:', error.message);
-            return null;
+            const response = await axios.get(`${this.portalUrl}/users/${username}`, {
+                headers: { 'X-API-Key': this.apiKey }
+            });
+            // Adapt to the expected format
+            const credit = response.data.credit || { availableBalance: 0, communityBalance: 0, payScore: 0 };
+            return {
+                meowStats: response.data,
+                trustLevel: response.data.trustLevel || 0,
+                credit
+            };
+        } catch (error) {
+            console.error('PortalHelper.getUserStats error:', error);
+            // Return defaults on error to not block login
+            return {
+                meowStats: {},
+                trustLevel: 0,
+                credit: { availableBalance: 0, communityBalance: 0, payScore: 0 }
+            };
+        }
+    }
+
+    async deductCredit(username: string, amount: number, reason: string) {
+        try {
+            const url = `${this.portalUrl}/users/${username}/credit`;
+            const payload = {
+                balanceChange: -Math.abs(amount),
+                reason: reason
+            };
+            const response = await axios.post(url, payload, {
+                headers: { 'X-API-Key': this.apiKey }
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('PortalHelper.deductCredit error:', error.response?.data || error.message);
+            throw error;
+        }
+    }
+
+    async awardCredit(username: string, amount: number, reason: string) {
+        try {
+            const url = `${this.portalUrl}/users/${username}/credit`;
+            const payload = {
+                balanceChange: Math.abs(amount),
+                reason: reason
+            };
+            const response = await axios.post(url, payload, {
+                headers: { 'X-API-Key': this.apiKey }
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('PortalHelper.awardCredit error:', error.response?.data || error.message);
+            throw error;
         }
     }
 }
