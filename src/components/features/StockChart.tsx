@@ -112,9 +112,9 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
 
             {viewMode === 'tradingview' ? (
                 /* Widget Container - strictly handled by TradingView script */
-                <div ref={containerRef} className="w-full h-full" />
+                <div key="tradingview-container" ref={containerRef} className="w-full h-full" />
             ) : (
-                <div className="w-full h-full flex flex-col relative bg-black pt-10">
+                <div key="realtime-container" className="w-full h-full flex flex-col relative bg-black pt-10">
                     {/* Period Selector */}
                     <div className="absolute top-2 left-2 z-10 flex bg-secondary/50 rounded-lg p-1 gap-1">
                         {(['min', 'daily', 'weekly', 'monthly'] as const).map((type) => (
@@ -122,8 +122,8 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
                                 key={type}
                                 onClick={() => setChartType(type)}
                                 className={`px-3 py-1 text-xs rounded-md transition-colors ${chartType === type
-                                        ? 'bg-primary text-primary-foreground font-medium'
-                                        : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                                    ? 'bg-primary text-primary-foreground font-medium'
+                                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
                                     }`}
                             >
                                 {type === 'min' && '分时'}
