@@ -58,18 +58,25 @@ export async function POST(request: Request) {
         if (type === 'DEPOSIT') {
             // DEPOSIT: Meow Coin -> Game Capital
             // 1. DEDUCT Meow Coin (amount is positive input, so we send negative change)
+            let newBalance: number | null = null;
             try {
-                await updateExternalCredit(username, -amount, `Deposit to Stock Market`);
+                const apiRes = await updateExternalCredit(username, -amount, `Deposit to Stock Market`);
+                if (apiRes.data && apiRes.data.new_balance) {
+                    newBalance = parseFloat(apiRes.data.new_balance);
+                }
             } catch (error: any) {
                 console.error("Failed to deduct Meow Coin:", error);
                 return NextResponse.json({ error: 'Failed to update Meow Coin balance: ' + error.message }, { status: 400 });
             }
 
-            // 2. Add Game Capital (Handled by frontend state for now, but ideally should be persisted in DB if there was one)
-            // Since this is a lightweight app with local storage persistence for stock data, 
-            // the server confirms the "Meow Coin" part, and tells frontend to update "Capital".
-
+            // 2. Add Game Capital
             const capitalDelta = amount * EXCHANGE_RATE;
+
+            // 3. Update Session
+            if (newBalance !== null && session.user && session.user.credit) {
+                session.user.credit.availableBalance = newBalance;
+                await session.save();
+            }
 
             return NextResponse.json({
                 success: true,
@@ -78,21 +85,26 @@ export async function POST(request: Request) {
 
         } else if (type === 'WITHDRAW') {
             // WITHDRAW: Game Capital -> Meow Coin
-            // 1. ADD Meow Coin (amount is Game Capital input? No, wait.)
-
-            // Re-reading logic from ExchangeModal.tsx:
-            // For WITHDRAW: const res = await withdrawCapital(val); where val is CAPITAL amount.
-            // const coinVal = val / EXCHANGE_RATE;
 
             const capitalAmount = amount;
             const coinAmount = capitalAmount / EXCHANGE_RATE;
 
             // 2. Add Meow Coin
+            let newBalance: number | null = null;
             try {
-                await updateExternalCredit(username, coinAmount, `Withdraw from Stock Market`);
+                const apiRes = await updateExternalCredit(username, coinAmount, `Withdraw from Stock Market`);
+                if (apiRes.data && apiRes.data.new_balance) {
+                    newBalance = parseFloat(apiRes.data.new_balance);
+                }
             } catch (error: any) {
                 console.error("Failed to add Meow Coin:", error);
                 return NextResponse.json({ error: 'Failed to update Meow Coin balance: ' + error.message }, { status: 400 });
+            }
+
+            // 3. Update Session
+            if (newBalance !== null && session.user && session.user.credit) {
+                session.user.credit.availableBalance = newBalance;
+                await session.save();
             }
 
             return NextResponse.json({
