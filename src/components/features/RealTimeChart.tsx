@@ -96,33 +96,32 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
                 horzLines: { color: 'rgba(42, 46, 57, 0.2)' },
             },
             width: chartContainerRef.current.clientWidth,
-            height: 500, // Fixed height or usually container height
+            height: chartContainerRef.current.clientHeight,
             timeScale: {
                 timeVisible: true,
                 secondsVisible: false,
+                borderColor: 'rgba(42, 46, 57, 0.2)',
+            },
+            rightPriceScale: {
+                borderColor: 'rgba(42, 46, 57, 0.2)',
             }
         });
 
         chartRef.current = chart;
 
-        // Create Series based on type
-        // We recreate series when type changes for simplicity in this MVP
-        // Actually better to handle re-creation in the separate effect below or clear logic
+        // Resize Observer
+        const resizeObserver = new ResizeObserver(entries => {
+            if (entries.length === 0 || entries[0].target !== chartContainerRef.current) { return; }
+            const newRect = entries[0].contentRect;
+            chart.applyOptions({ height: newRect.height, width: newRect.width });
+        });
+
+        resizeObserver.observe(chartContainerRef.current);
 
         return () => {
+            resizeObserver.disconnect();
             chart.remove();
         };
-    }, []);
-
-    // Handle Resize
-    useEffect(() => {
-        const handleResize = () => {
-            if (chartRef.current && chartContainerRef.current) {
-                chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     // Manage Series and Data when Type Changes
@@ -173,8 +172,8 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
         // Fetch initial data
         fetchData();
 
-        // Setup Auto Refresh
-        const timer = setInterval(fetchData, 10000); // 10s refresh
+        // Setup Auto Refresh (3s as requested for faster updates)
+        const timer = setInterval(fetchData, 3000);
 
         return () => clearInterval(timer);
 
@@ -182,13 +181,20 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
 
     return (
         <div className="w-full h-full relative group">
-            <div ref={chartContainerRef} className="w-full h-[450px]" />
+            <div ref={chartContainerRef} className="w-full h-full" />
 
             {/* Loading / Status Indicator */}
-            <div className="absolute top-2 right-2 flex items-center gap-2 text-xs text-muted-foreground bg-background/50 p-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-2 right-2 flex items-center gap-2 text-xs text-muted-foreground bg-background/50 p-1 rounded backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                 {loading && <RefreshCcw className="w-3 h-3 animate-spin" />}
                 <span>Last: {new Date(lastUpdate).toLocaleTimeString()}</span>
             </div>
+
+            {/* No Data Overlay */}
+            {!loading && (!candlestickSeriesRef.current?.data().length) && (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm pointer-events-none">
+                    暂无数据 (No Data)
+                </div>
+            )}
         </div>
     );
 }
