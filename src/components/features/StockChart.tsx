@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import { useStockData } from '@/hooks/useStockData';
 
 interface StockChartProps {
@@ -10,9 +10,9 @@ interface StockChartProps {
 
 export function StockChart({ symbol }: StockChartProps) {
     const chartContainerRef = useRef<HTMLDivElement>(null);
-    const chartRef = useRef<IChartApi | null>(null);
-    const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-    const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+    const chartRef = useRef<any>(null);
+    const candlestickSeriesRef = useRef<any>(null);
+    const volumeSeriesRef = useRef<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const lastCloseRef = useRef<number | null>(null);
@@ -94,7 +94,7 @@ export function StockChart({ symbol }: StockChartProps) {
                 // Construct proper K-line candle
                 // The open should be the previous candle's close (for continuity)
                 // But for real-time updates, we use the stock's actual open price from API
-                const currentCandle: CandlestickData = {
+                const currentCandle = {
                     time: timestamp as any,
                     open: stock.open,
                     high: stock.high,
@@ -150,8 +150,7 @@ export function StockChart({ symbol }: StockChartProps) {
         // Add Candlestick Series with CORRECT COLORS
         // Red (ef4444) = UP (close > open) = Bullish
         // Green (10b981) = DOWN (close < open) = Bearish
-        // @ts-ignore - lightweight-charts type definition issue in production build
-        const candlestickSeries = chart.addCandlestickSeries({
+        const candlestickSeries = chart.addSeries(CandlestickSeries, {
             upColor: '#ef4444',        // Red for up
             downColor: '#10b981',      // Green for down
             borderUpColor: '#ef4444',
@@ -161,8 +160,7 @@ export function StockChart({ symbol }: StockChartProps) {
         });
 
         // Add Volume Histogram Series
-        // @ts-ignore - lightweight-charts type definition issue in production build
-        const volumeSeries = chart.addHistogramSeries({
+        const volumeSeries = chart.addSeries(HistogramSeries, {
             color: '#26a69a',
             priceFormat: {
                 type: 'volume',
