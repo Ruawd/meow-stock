@@ -262,7 +262,7 @@ export const useStockStore = create<StockState>()(
                             transactions: [
                                 {
                                     id: crypto.randomUUID(),
-                                    type: 'DEPOSIT' as any, // Cast to any to bypass strict type for now or add to type def
+                                    type: 'DEPOSIT' as any,
                                     symbol: 'CNY',
                                     name: 'Deposit',
                                     price: 1,
@@ -272,59 +272,57 @@ export const useStockStore = create<StockState>()(
                                 ...transactions
                             ]
                         });
-                            ]
-                        });
-return { success: true, newMeowBalance: data.newMeowBalance };
+                        return { success: true, newMeowBalance: data.newMeowBalance };
                     } else {
-    return { success: false, message: data.error };
-}
+                        return { success: false, message: data.error };
+                    }
                 } catch (e: any) {
-    return { success: false, message: e.message };
-}
+                    return { success: false, message: e.message };
+                }
             },
 
-withdrawCapital: async (amount: number) => {
-    const { balance, transactions } = get();
-    if (balance < amount) {
-        return { success: false, message: 'Insufficient capital' };
-    }
+            withdrawCapital: async (amount: number) => {
+                const { balance, transactions } = get();
+                if (balance < amount) {
+                    return { success: false, message: 'Insufficient capital' };
+                }
 
-    try {
-        const res = await fetch('/api/economy/transact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'WITHDRAW', amount }),
-        });
-        const data = await res.json();
+                try {
+                    const res = await fetch('/api/economy/transact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'WITHDRAW', amount }),
+                    });
+                    const data = await res.json();
 
-        if (data.success) {
-            set({
-                balance: balance + data.capitalDelta, // delta is negative
-                transactions: [
-                    {
-                        id: crypto.randomUUID(),
-                        type: 'WITHDRAW' as any,
-                        symbol: 'CNY',
-                        name: 'Withdraw',
-                        price: 1,
-                        quantity: Math.abs(data.capitalDelta),
-                        date: new Date().toISOString(),
-                    },
-                    ...transactions
-                ]
-            });
-            return { success: true };
-        } else {
-            return { success: false, message: data.error };
-        }
-    } catch (e: any) {
-        return { success: false, message: e.message };
-    }
-},
+                    if (data.success) {
+                        set({
+                            balance: balance + data.capitalDelta, // delta is negative
+                            transactions: [
+                                {
+                                    id: crypto.randomUUID(),
+                                    type: 'WITHDRAW' as any,
+                                    symbol: 'CNY',
+                                    name: 'Withdraw',
+                                    price: 1,
+                                    quantity: Math.abs(data.capitalDelta),
+                                    date: new Date().toISOString(),
+                                },
+                                ...transactions
+                            ]
+                        });
+                        return { success: true, newMeowBalance: data.newMeowBalance };
+                    } else {
+                        return { success: false, message: data.error };
+                    }
+                } catch (e: any) {
+                    return { success: false, message: e.message };
+                }
+            },
         }),
-{
-    name: 'chinastock-storage',
-        storage: createJSONStorage(() => localStorage),
+        {
+            name: 'chinastock-storage',
+            storage: createJSONStorage(() => localStorage),
         }
     )
 );
