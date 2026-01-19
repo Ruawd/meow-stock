@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, Time } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, Time, AreaSeries, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import { RefreshCcw } from 'lucide-react';
 
 interface RealTimeChartProps {
@@ -54,16 +54,17 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
                     if (candlestickSeriesRef.current) {
                         candlestickSeriesRef.current.setData(data.map((d: any) => ({
                             time: d.time,
-                            open: d.open,
-                            high: d.high,
-                            low: d.low,
-                            close: d.close
+                            // lightweight-charts v5 might be strict about open/high/low/close types
+                            open: Number(d.open),
+                            high: Number(d.high),
+                            low: Number(d.low),
+                            close: Number(d.close)
                         })));
                     }
                     if (volumeSeriesRef.current) {
                         volumeSeriesRef.current.setData(data.map((d: any) => ({
                             time: d.time,
-                            value: d.volume,
+                            value: Number(d.volume),
                             color: d.close >= d.open ? 'rgba(239, 83, 80, 0.5)' : 'rgba(38, 166, 154, 0.5)' // Red Up, Green Down (CN Style)
                         })));
                     }
@@ -145,7 +146,7 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
         // Create new series
         if (type === 'min') {
             // 1. Area Series (Price)
-            const areaSeries = chartRef.current.addAreaSeries({
+            const areaSeries = chartRef.current.addSeries(AreaSeries, {
                 lineColor: '#2962FF',
                 topColor: '#2962FF',
                 bottomColor: 'rgba(41, 98, 255, 0.28)',
@@ -155,7 +156,7 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
         } else {
             // 1. Candlestick Series (Price)
             // CN Colors: Up=Red, Down=Green
-            const candlestickSeries = chartRef.current.addCandlestickSeries({
+            const candlestickSeries = chartRef.current.addSeries(CandlestickSeries, {
                 upColor: '#ef5350',
                 downColor: '#26a69a',
                 borderVisible: false,
@@ -166,7 +167,7 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
         }
 
         // 2. Volume Series (Common)
-        const volumeSeries = chartRef.current.addHistogramSeries({
+        const volumeSeries = chartRef.current.addSeries(HistogramSeries, {
             priceFormat: {
                 type: 'volume',
             },
