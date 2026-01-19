@@ -5,11 +5,12 @@ import { SessionData, sessionOptions } from '@/lib/session';
 
 // Helper to call external Meow Portal/Credit Master API
 async function updateExternalCredit(username: string, amount: number, reason: string) {
-    const API_BASE_URL = process.env.MEOW_PORTAL_API_URL || 'https://meow-portal.ruawd.de'; // Fallback to provided domain
-    const API_KEY = process.env.MEOW_PORTAL_API_KEY;
+    const API_BASE_URL = process.env.PORTAL_URL || 'https://meow-portal.ruawd.de';
+    // Use the correctly configured env var
+    const API_KEY = process.env.PORTAL_API_KEY;
 
     if (!API_KEY) {
-        throw new Error('MEOW_PORTAL_API_KEY is not configured');
+        throw new Error('PORTAL_API_KEY is not configured');
     }
 
     // Using Endpoint #4: Update Credit Balance from API_DOC.md
