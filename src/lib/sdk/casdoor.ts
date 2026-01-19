@@ -15,14 +15,19 @@ export class CasdoorHelper {
         try {
             console.log('Exchanging code for token:', code);
             const token = await this.sdk.getAuthToken(code);
-            console.log('Token received:', token ? (typeof token === 'string' ? token.substring(0, 20) + '...' : typeof token) : 'null/undefined');
+            console.log('Token received type:', typeof token);
 
-            if (!token || typeof token !== 'string') {
-                throw new Error(`Invalid token received from Casdoor: ${JSON.stringify(token)}`);
+            let accessToken = token;
+            if (token && typeof token === 'object' && token.access_token) {
+                accessToken = token.access_token;
             }
 
-            const user = this.sdk.parseJwtToken(token);
-            return { token, user };
+            if (!accessToken || typeof accessToken !== 'string') {
+                throw new Error(`Invalid access token format: ${JSON.stringify(token)}`);
+            }
+
+            const user = this.sdk.parseJwtToken(accessToken);
+            return { token: accessToken, user };
         } catch (error) {
             console.error('CasdoorHelper.getUser error:', error);
             throw error;
