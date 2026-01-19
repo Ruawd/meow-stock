@@ -20,7 +20,9 @@ export async function GET(request: Request) {
         // monthly: param=...,month,,,320,qfq
 
         if (type === 'min') {
-            url = `https://web.ifzq.gtimg.cn/appstock/app/minute/query?code=${code}`;
+            // Use mkline for 1-minute K-line data
+            // http://ifzq.gtimg.cn/appstock/app/kline/mkline?param=sh600519,m1,,640
+            url = `https://web.ifzq.gtimg.cn/appstock/app/kline/mkline?param=${code},m1,,320`;
         } else {
             const periodMap: Record<string, string> = {
                 'daily': 'day',
@@ -54,40 +56,32 @@ export async function GET(request: Request) {
         }
 
         if (type === 'min') {
-            // Parse Minute Data
-            // Structure: data[code].data.data = ["0930 1381.00 13054", ...] (Time Price Volume)
-            // Or data[code].data.data might be different, let's look at previous test output
-            // Minute Sample: "0930 1381.90 4172 1382.00 5767424" -> Time, Price, Volume(Sales), AvgPrice, Amount?
+            // Parse 1-Min K-line Data
+            // Structure: data[code].m1 = [["202301010930", "10.0", "10.1", "10.2", "9.9", "1000"], ...]
+            // [Time(YYYYMMDDHHMM), Open, Close, High, Low, Volume, ...]
 
-            const minData = stockData.data?.data;
-            // Also need the date from stockData.data.date usually, to construct full timestamp
-            const dateStr = stockData.data?.date; // 20230101
+            const m1Data = stockData.m1;
 
-            if (minData && Array.isArray(minData) && dateStr) {
-                const year = parseInt(dateStr.substring(0, 4));
-                const month = parseInt(dateStr.substring(4, 6)) - 1;
-                const day = parseInt(dateStr.substring(6, 8));
+            if (m1Data && Array.isArray(m1Data)) {
+                result = m1Data.map((item: string[]) => {
+                    const timeStr = item[0]; // 202301010930
+                    const year = parseInt(timeStr.substring(0, 4));
+                    const month = parseInt(timeStr.substring(4, 6)) - 1;
+                    const day = parseInt(timeStr.substring(6, 8));
+                    const hour = parseInt(timeStr.substring(8, 10));
+                    const minute = parseInt(timeStr.substring(10, 12));
 
-                result = minData.map((item: string) => {
-                    const parts = item.split(' ');
-                    const timeStr = parts[0]; // 0930
-                    const price = parseFloat(parts[1]);
-                    const volume = parseInt(parts[2]);
-
-                    const hour = parseInt(timeStr.substring(0, 2));
-                    const minute = parseInt(timeStr.substring(2, 4));
-
-                    const date = new Date(year, month, day, hour, minute);
-                    // Adjust for timezone if server is not in China, but easier to return timestamp
-                    // Lightweight charts expects unix timestamp (seconds)
-                    // Note: This assumes server is in correct timezone or handling UTC. 
-                    // Best to force Beijing time construction.
-                    const beijingTime = new Date(Date.UTC(year, month, day, hour - 8, minute)).getTime() / 1000;
+                    // Convert to unix timestamp (seconds)
+                    // Treat as Beijing Time (UTC+8) -> UTC
+                    const time = new Date(Date.UTC(year, month, day, hour - 8, minute)).getTime() / 1000;
 
                     return {
-                        time: beijingTime,
-                        value: price,
-                        volume: volume * 100 // Lots to shares
+                        time: time,
+                        open: parseFloat(item[1]),
+                        close: parseFloat(item[2]),
+                        high: parseFloat(item[3]),
+                        low: parseFloat(item[4]),
+                        volume: parseFloat(item[5]) * 100 // Lots to shares if needed, usually m1 vol is lots too
                     };
                 });
             }

@@ -144,27 +144,16 @@ export default function RealTimeChart({ symbol, type }: RealTimeChartProps) {
         }
 
         // Create new series
-        if (type === 'min') {
-            // 1. Area Series (Price)
-            const areaSeries = chartRef.current.addSeries(AreaSeries, {
-                lineColor: '#2962FF',
-                topColor: '#2962FF',
-                bottomColor: 'rgba(41, 98, 255, 0.28)',
-                priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
-            });
-            areaSeriesRef.current = areaSeries;
-        } else {
-            // 1. Candlestick Series (Price)
-            // CN Colors: Up=Red, Down=Green
-            const candlestickSeries = chartRef.current.addSeries(CandlestickSeries, {
-                upColor: '#ef5350',
-                downColor: '#26a69a',
-                borderVisible: false,
-                wickUpColor: '#ef5350',
-                wickDownColor: '#26a69a',
-            });
-            candlestickSeriesRef.current = candlestickSeries;
-        }
+        // Now ALL types use CandlestickSeries, including 'min' (1-minute K-line)
+        // CN Colors: Up=Red, Down=Green
+        const candlestickSeries = chartRef.current.addSeries(CandlestickSeries, {
+            upColor: '#ef5350',
+            downColor: '#26a69a',
+            borderVisible: false,
+            wickUpColor: '#ef5350',
+            wickDownColor: '#26a69a',
+        });
+        candlestickSeriesRef.current = candlestickSeries;
 
         // 2. Volume Series (Common)
         const volumeSeries = chartRef.current.addSeries(HistogramSeries, {
