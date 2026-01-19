@@ -12,8 +12,20 @@ export class CasdoorHelper {
     }
 
     async getUser(code: string) {
-        const token = await this.sdk.getAuthToken(code);
-        const user = this.sdk.parseJwtToken(token);
-        return { token, user };
+        try {
+            console.log('Exchanging code for token:', code);
+            const token = await this.sdk.getAuthToken(code);
+            console.log('Token received:', token ? (typeof token === 'string' ? token.substring(0, 20) + '...' : typeof token) : 'null/undefined');
+
+            if (!token || typeof token !== 'string') {
+                throw new Error(`Invalid token received from Casdoor: ${JSON.stringify(token)}`);
+            }
+
+            const user = this.sdk.parseJwtToken(token);
+            return { token, user };
+        } catch (error) {
+            console.error('CasdoorHelper.getUser error:', error);
+            throw error;
+        }
     }
 }
