@@ -8,7 +8,7 @@ export class CasdoorHelper {
     }
 
     getSigninUrl(redirectUri: string) {
-        return this.sdk.getSigninUrl(redirectUri);
+        return this.sdk.getSignInUrl(redirectUri);
     }
 
     async getUser(code: string) {
