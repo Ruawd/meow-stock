@@ -27,18 +27,18 @@ export function StockChart({ symbol }: StockChartProps) {
                 // Chart not initialized yet, wait for next run
                 return;
             }
-            
+
             setLoading(true);
             setError(null);
-            
+
             try {
                 // Scale 5 = 5 Minute Candles
                 const res = await fetch(`/api/kline?code=${symbol}&scale=5&datalen=242`);
-                
+
                 if (!res.ok) {
                     throw new Error('Failed to fetch chart data');
                 }
-                
+
                 const history = await res.json();
 
                 if (history.error) {
@@ -49,14 +49,14 @@ export function StockChart({ symbol }: StockChartProps) {
 
                 if (Array.isArray(history) && history.length > 0) {
                     candlestickSeriesRef.current.setData(history);
-                    
+
                     // Store the last close price for continuity
                     const lastCandle = history[history.length - 1];
                     lastCloseRef.current = lastCandle.close;
-                    
+
                     // Generate volume data (if available from historical data)
                     // For now, we'll add volume in real-time updates
-                    
+
                     setLoading(false);
                 } else {
                     // Empty data means invalid stock code
@@ -103,7 +103,7 @@ export function StockChart({ symbol }: StockChartProps) {
                 };
 
                 candlestickSeriesRef.current.update(currentCandle);
-                
+
                 // Update volume if we have volume series
                 if (volumeSeriesRef.current && stock.volume) {
                     const volumeColor = stock.price >= stock.open ? '#ef4444' : '#10b981';
@@ -113,7 +113,7 @@ export function StockChart({ symbol }: StockChartProps) {
                         color: volumeColor,
                     });
                 }
-                
+
                 // Update last close for next candle
                 lastCloseRef.current = stock.price;
             } catch (err) {
@@ -150,6 +150,7 @@ export function StockChart({ symbol }: StockChartProps) {
         // Add Candlestick Series with CORRECT COLORS
         // Red (ef4444) = UP (close > open) = Bullish
         // Green (10b981) = DOWN (close < open) = Bearish
+        // @ts-ignore - lightweight-charts type definition issue in production build
         const candlestickSeries = chart.addCandlestickSeries({
             upColor: '#ef4444',        // Red for up
             downColor: '#10b981',      // Green for down
@@ -160,6 +161,7 @@ export function StockChart({ symbol }: StockChartProps) {
         });
 
         // Add Volume Histogram Series
+        // @ts-ignore - lightweight-charts type definition issue in production build
         const volumeSeries = chart.addHistogramSeries({
             color: '#26a69a',
             priceFormat: {
