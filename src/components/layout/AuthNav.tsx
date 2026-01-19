@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ExchangeModal } from '@/components/economy/ExchangeModal';
 
 export function AuthNav() {
+    // Auth navigation component
     const { user, isLoading, fetchUser, logout } = useUserStore();
     const { balance } = useStockStore();
     const [showExchange, setShowExchange] = useState(false);
