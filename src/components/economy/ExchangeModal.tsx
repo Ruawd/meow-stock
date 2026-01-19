@@ -52,7 +52,7 @@ export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: Excha
                 const res = await depositCapital(val);
                 if (res.success) {
                     toast.success(`充值成功：${val} Meow Coin 兑换 ${(val * EXCHANGE_RATE).toLocaleString()} 资金`);
-                    if (res.newMeowBalance !== undefined) {
+                    if (typeof res.newMeowBalance === 'number') {
                         updateBalance(res.newMeowBalance);
                     } else {
                         await fetchUser();
@@ -83,7 +83,7 @@ export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: Excha
                 const res = await withdrawCapital(val);
                 if (res.success) {
                     toast.success(`提现成功：${val.toLocaleString()} 资金 兑换 ${coinVal} Meow Coin`);
-                    if (res.newMeowBalance !== undefined) {
+                    if (typeof res.newMeowBalance === 'number') {
                         updateBalance(res.newMeowBalance);
                     } else {
                         await fetchUser();
