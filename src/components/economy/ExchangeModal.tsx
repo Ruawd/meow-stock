@@ -125,7 +125,7 @@ export function ExchangeModal({ isOpen, onClose, initialTab = 'DEPOSIT' }: Excha
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-zinc-500">Meow Coin Balance:</span>
-                            <span className="font-mono font-medium">{user?.credit?.availableBalance.toFixed(2) || '0.00'}</span>
+                            <span className="font-mono font-medium">{(user?.credit?.availableBalance ?? 0).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-zinc-500">Game Capital:</span>
