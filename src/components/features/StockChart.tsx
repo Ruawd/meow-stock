@@ -97,7 +97,7 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
     }, [symbol, viewMode]);
 
     return (
-        <div className="w-full h-[500px] bg-card rounded-xl border overflow-hidden relative" ref={containerRef}>
+        <div className="w-full h-[500px] bg-card rounded-xl border overflow-hidden relative">
             <div className="absolute top-2 right-2 z-10 flex gap-2">
                 <Button
                     variant={viewMode === 'tradingview' ? "default" : "secondary"}
@@ -121,9 +121,7 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
 
             {viewMode === 'tradingview' ? (
                 /* Widget Container - strictly handled by TradingView script */
-                <div className="tradingview-widget-container" style={{ height: "100%", width: "100%" }}>
-                    {/* Content injected by useEffect */}
-                </div>
+                <div ref={containerRef} className="w-full h-full" />
             ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-black relative">
                     {/* Period Selector */}
@@ -151,7 +149,7 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
                             alt={`${symbol} ${chartType} Chart`}
                             className="max-w-full max-h-full object-contain filter invert hue-rotate-180 brightness-90 contrast-125"
                         />
-                        {/* Note: Sina images are white bg by default. CSS filter helps it blend into dark mode, 
+                        {/* Note: Sina images are white bg by default. CSS filter helps it blend into dark mode,
                              though not perfect. But it's free real-time. */}
                     </div>
                     <div className="absolute bottom-2 right-2 text-xs text-muted-foreground flex items-center gap-1">
