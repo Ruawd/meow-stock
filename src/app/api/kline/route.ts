@@ -106,17 +106,19 @@ export async function GET(request: Request) {
             const volume = parseFloat(parts[5]);
 
             let timestamp;
-            // Handle different date formats if necessary, but standard parsing usually works
-            // "2024-03-20 15:00" or "2024-03-20"
+            // lighthouse-charts interprets all timestamps as UTC
+            // East Money returns China local time, so we need to offset by +8 hours
+            // to make UTC interpretation show correct local time
+            const CHINA_OFFSET = 8 * 60 * 60; // 8 hours in seconds
+
             if (dateStr.includes(' ')) {
-                // Minute data
-                timestamp = new Date(dateStr).getTime() / 1000;
+                // Minute data: "2024-03-20 15:00"
+                const date = new Date(dateStr.replace(' ', 'T') + ':00');
+                timestamp = Math.floor(date.getTime() / 1000) + CHINA_OFFSET;
             } else {
-                // Daily data "2024-03-20" - set to end of day or start?
-                // lightweight-charts handles day string, but we want timestamp for consistency
-                // Use UTC to avoid timezone shifts?
-                // Simple timestamp is fine correctly adjusted to local
-                timestamp = new Date(dateStr + "T00:00:00").getTime() / 1000;
+                // Daily data: "2024-03-20"
+                const date = new Date(dateStr + 'T00:00:00');
+                timestamp = Math.floor(date.getTime() / 1000) + CHINA_OFFSET;
             }
 
             return {

@@ -1,10 +1,6 @@
 export const calculateSMA = (data: any[], count: number) => {
-    let result = [];
-    for (let i = 0; i < data.length; i++) {
-        if (i < count - 1) {
-            result.push({ time: data[i].time, value: NaN });
-            continue;
-        }
+    const result = [];
+    for (let i = count - 1; i < data.length; i++) {
         let sum = 0;
         for (let j = 0; j < count; j++) {
             sum += data[i - j].close;
@@ -29,7 +25,7 @@ export const calculateEMA = (data: any[], count: number) => {
 };
 
 export const calculateRSI = (data: any[], count: number = 14) => {
-    let result = [];
+    const result = [];
     let gains = 0;
     let losses = 0;
 
@@ -43,28 +39,26 @@ export const calculateRSI = (data: any[], count: number = 14) => {
     let avgGain = gains / count;
     let avgLoss = losses / count;
 
+    let rs = avgGain / avgLoss;
+    let rsi = 100 - (100 / (1 + rs));
+    result.push({ time: data[count].time, value: rsi });
+
     // Subsequent periods
     for (let i = count + 1; i < data.length; i++) {
         const change = data[i].close - data[i - 1].close;
-        let gain = change > 0 ? change : 0;
-        let loss = change < 0 ? -change : 0;
+        const gain = change > 0 ? change : 0;
+        const loss = change < 0 ? -change : 0;
 
         avgGain = (avgGain * (count - 1) + gain) / count;
         avgLoss = (avgLoss * (count - 1) + loss) / count;
 
-        let rs = avgGain / avgLoss;
-        let rsi = 100 - (100 / (1 + rs));
+        rs = avgGain / avgLoss;
+        rsi = 100 - (100 / (1 + rs));
 
         result.push({ time: data[i].time, value: rsi });
     }
 
-    // Pad initial
-    const padding = data.length - result.length;
-    const finalResult = [];
-    for (let i = 0; i < padding; i++) {
-        finalResult.push({ time: data[i].time, value: NaN });
-    }
-    return [...finalResult, ...result];
+    return result;
 };
 
 export const calculateMACD = (data: any[], fast: number = 12, slow: number = 26, signal: number = 9) => {

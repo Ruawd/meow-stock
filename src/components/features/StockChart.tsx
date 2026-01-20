@@ -55,23 +55,21 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
     const [refreshing, setRefreshing] = useState(false);
 
-    // Sync Helper
+    // Sync Helper - simplified for lightweight-charts v5
     const syncCharts = useCallback(() => {
         const charts = [mainChartRef.current, macdChartRef.current, rsiChartRef.current].filter(Boolean);
 
         charts.forEach((chart, index) => {
             if (!chart) return;
+            // Sync visible range across charts
             chart.timeScale().subscribeVisibleLogicalRangeChange((range: any) => {
                 charts.forEach((otherChart, otherIndex) => {
                     if (index !== otherIndex && otherChart) {
-                        otherChart.timeScale().setVisibleLogicalRange(range);
-                    }
-                });
-            });
-            chart.timeScale().subscribeCrosshairMove((param: any) => {
-                charts.forEach((otherChart, otherIndex) => {
-                    if (index !== otherIndex && otherChart && param.time) {
-                        otherChart.setCrosshairPosition(0, param.time, otherChart.priceScale('right').coordinateToPrice(0));
+                        try {
+                            otherChart.timeScale().setVisibleLogicalRange(range);
+                        } catch (e) {
+                            // Ignore sync errors
+                        }
                     }
                 });
             });
@@ -85,9 +83,23 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
         const commonOptions = {
             layout: { background: { type: ColorType.Solid, color: '#131722' }, textColor: '#d1d4dc' },
             grid: { vertLines: { color: 'rgba(42, 46, 57, 0.4)' }, horzLines: { color: 'rgba(42, 46, 57, 0.4)' } },
-            timeScale: { timeVisible: true, secondsVisible: false, borderColor: 'rgba(156, 163, 175, 0.2)' },
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: false,
+                borderColor: 'rgba(156, 163, 175, 0.2)',
+            },
             crosshair: { mode: CrosshairMode.Normal },
             rightPriceScale: { borderColor: 'rgba(156, 163, 175, 0.2)' },
+            localization: {
+                timeFormatter: (timestamp: number) => {
+                    const date = new Date(timestamp * 1000);
+                    return date.toLocaleString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                },
+            },
         };
 
         // Main Chart
@@ -204,66 +216,8 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
         loadData();
     }, [symbol, interval, showMACD, showRSI]);
 
-    // Auto-refresh every 30 seconds
-    useEffect(() => {
-        const timer: NodeJS.Timeout = setInterval(() => {
-            if (!loading && !refreshing) {
-                const loadData = async () => {
-                    setRefreshing(true);
-                    try {
-                        let scaleParam = '15';
-                        if (interval === '1') scaleParam = '1';
-                        if (interval === '5') scaleParam = '5';
-                        if (interval === '15') scaleParam = '15';
-                        if (interval === '30') scaleParam = '30';
-                        if (interval === '60') scaleParam = '60';
-                        if (interval === 'D') scaleParam = '101';
-
-                        const res = await fetch(`/api/kline?code=${symbol}&scale=${scaleParam}&datalen=500`);
-                        if (!res.ok) throw new Error('Data fetch failed');
-                        const data = await res.json();
-
-                        if (!Array.isArray(data) || data.length === 0) throw new Error('No Data');
-
-                        candlestickSeriesRef.current.setData(data);
-                        volumeSeriesRef.current.setData(data.map((d: any) => ({
-                            time: d.time, value: d.volume, color: d.close >= d.open ? 'rgba(8, 153, 129, 0.3)' : 'rgba(242, 54, 69, 0.3)'
-                        })));
-
-                        ma5SeriesRef.current.setData(calculateSMA(data, 5));
-                        ma10SeriesRef.current.setData(calculateSMA(data, 10));
-                        ma20SeriesRef.current.setData(calculateSMA(data, 20));
-
-                        if (showMACD && macdDiffSeriesRef.current) {
-                            const macd = calculateMACD(data);
-                            macdDiffSeriesRef.current.setData(macd.diff);
-                            macdDeaSeriesRef.current.setData(macd.dea);
-                            macdHistSeriesRef.current.setData(macd.hist);
-                        }
-
-                        if (showRSI && rsiSeriesRef.current) {
-                            const rsi = calculateRSI(data);
-                            rsiSeriesRef.current.setData(rsi);
-                        }
-
-                        setLastUpdate(new Date());
-                    } catch (e: any) {
-                        console.error('Auto-refresh failed:', e);
-                    } finally {
-                        setRefreshing(false);
-                    }
-                };
-                loadData();
-            }
-        }, 30000); // 30 seconds
-
-        return () => clearInterval(timer);
-    }, [symbol, interval, loading, refreshing, showMACD, showRSI]);
-
     const handleManualRefresh = () => {
-        if (!loading && !refreshing) {
-            window.location.reload();
-        }
+        window.location.reload();
     };
 
     return (
