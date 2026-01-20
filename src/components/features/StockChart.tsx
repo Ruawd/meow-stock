@@ -90,16 +90,6 @@ export const StockChart = memo(function StockChart({ symbol }: StockChartProps) 
             },
             crosshair: { mode: CrosshairMode.Normal },
             rightPriceScale: { borderColor: 'rgba(156, 163, 175, 0.2)' },
-            localization: {
-                timeFormatter: (timestamp: number) => {
-                    const date = new Date(timestamp * 1000);
-                    return date.toLocaleString('zh-CN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                    });
-                },
-            },
         };
 
         // Main Chart
