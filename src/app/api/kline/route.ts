@@ -48,35 +48,84 @@ export async function GET(request: Request) {
         return NextResponse.json(history);
     }
 
-    // 2. Real Stock History
+    // 2. Real Stock History (East Money API)
     try {
-        const datalen = searchParams.get('datalen') || '242';
-        const url = `http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol}&scale=${scale}&ma=no&datalen=${datalen}`;
+        const datalen = searchParams.get('datalen') || '200';
+
+        // Map symbol to East Money secid
+        // sh600519 -> 1.600519
+        // sz000001 -> 0.000001
+        let secid = '';
+        const cleanSymbol = symbol.toLowerCase().replace(/^(sh|sz|bj)/, '');
+        if (symbol.toLowerCase().startsWith('sh')) {
+            secid = `1.${cleanSymbol}`;
+        } else if (symbol.toLowerCase().startsWith('sz')) {
+            secid = `0.${cleanSymbol}`;
+        } else if (symbol.toLowerCase().startsWith('bj')) {
+            secid = `0.${cleanSymbol}`; // Basic BSE support
+        } else {
+            // Fallback inference
+            secid = (cleanSymbol.startsWith('6') ? '1.' : '0.') + cleanSymbol;
+        }
+
+        // klt: 101=Day, 102=Week, 103=Month, 1=1min, 5=5min, 15=15min, 30=30min, 60=60min
+        let klt = '101'; // Default Daily
+        if (scale === '1') klt = '1';
+        if (scale === '5') klt = '5';
+        if (scale === '15') klt = '15';
+        if (scale === '30') klt = '30';
+        if (scale === '60') klt = '60';
+
+        const url = `http://push2his.eastmoney.com/api/qt/stock/kline/get?secid=${secid}&klt=${klt}&fqt=1&lmt=${datalen}&end=20500000&iscca=1&fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56`;
 
         const response = await fetch(url, {
-            headers: { 'Referer': 'https://finance.sina.com.cn' },
-            next: { revalidate: 30 }
+            headers: {
+                'Referer': 'http://quote.eastmoney.com/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            },
+            next: { revalidate: 10 } // Short cache for minute data
         });
 
-        if (!response.ok) throw new Error(`Sina API error: ${response.status}`);
+        if (!response.ok) throw new Error(`EastMoney API error: ${response.status}`);
 
-        const data = await response.json();
+        const json = await response.json();
 
-        const chartData = data.map((item: any) => {
+        if (!json.data || !json.data.klines) {
+            return NextResponse.json([]);
+        }
+
+        const chartData = json.data.klines.map((item: string) => {
+            const parts = item.split(',');
+            // Format: "2024-03-20 15:00,10.5,10.6,10.8,10.4,1000"
+            // Date, Open, Close, High, Low, Volume
+            const dateStr = parts[0];
+            const open = parseFloat(parts[1]);
+            const close = parseFloat(parts[2]);
+            const high = parseFloat(parts[3]);
+            const low = parseFloat(parts[4]);
+            const volume = parseFloat(parts[5]);
+
             let timestamp;
-            const dateStr = item.day;
-            if (dateStr.length === 10) {
-                timestamp = new Date(dateStr + "T00:00:00").getTime() / 1000;
-            } else {
+            // Handle different date formats if necessary, but standard parsing usually works
+            // "2024-03-20 15:00" or "2024-03-20"
+            if (dateStr.includes(' ')) {
+                // Minute data
                 timestamp = new Date(dateStr).getTime() / 1000;
+            } else {
+                // Daily data "2024-03-20" - set to end of day or start?
+                // lightweight-charts handles day string, but we want timestamp for consistency
+                // Use UTC to avoid timezone shifts?
+                // Simple timestamp is fine correctly adjusted to local
+                timestamp = new Date(dateStr + "T00:00:00").getTime() / 1000;
             }
 
             return {
                 time: timestamp,
-                open: parseFloat(item.open),
-                high: parseFloat(item.high),
-                low: parseFloat(item.low),
-                close: parseFloat(item.close),
+                open,
+                high,
+                low,
+                close,
+                volume
             };
         });
 

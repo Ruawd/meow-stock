@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { MarketOverview } from "@/components/features/MarketOverview";
 import { StockChart } from "@/components/features/StockChart";
+
 import { TradePanel } from "@/components/features/TradePanel";
 import { Portfolio } from "@/components/features/Portfolio";
 import { FavoritesList } from "@/components/features/FavoritesList";
